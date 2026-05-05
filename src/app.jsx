@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 /* ════════════════════════════════════════════
    ALL_dOcS — Documentos clínicos da Associação Allos
@@ -843,19 +843,41 @@ body{font-family:'DM Sans','Helvetica Neue',Arial,sans-serif;background:${C.crea
 
 textarea.allos-input{resize:vertical;min-height:80px;line-height:1.55;font-family:'DM Sans',sans-serif}
 
+/* RESIZER — drag handle entre form e preview */
+.doc-resizer{
+  position:relative;flex:0 0 auto;align-self:stretch;
+  background:${C.creamAlt};border:0;padding:0;margin:0;
+  transition:background .15s;
+  touch-action:none;
+}
+.doc-resizer:hover,.doc-resizer.dragging{background:${C.teal}33}
+.doc-resizer::before{
+  content:'';position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%);
+  background:${C.muted};opacity:.45;border-radius:2px;
+  transition:background .15s,opacity .15s;
+}
+.doc-resizer:hover::before,.doc-resizer.dragging::before{
+  background:${C.teal};opacity:.95;
+}
+/* desktop: vertical bar (drag horizontally) */
+.doc-resizer.is-desktop{width:6px;cursor:col-resize;
+  border-left:1px solid ${C.border};border-right:1px solid ${C.border}}
+.doc-resizer.is-desktop::before{width:2px;height:36px}
+/* mobile: horizontal bar (drag vertically) */
+.doc-resizer.is-mobile{height:14px;width:100%;cursor:row-resize;
+  border-top:1px solid ${C.border};border-bottom:1px solid ${C.border}}
+.doc-resizer.is-mobile::before{width:42px;height:3px}
+
 /* RESPONSIVE */
 @media(max-width:1024px){
   .app-sidebar{width:56px!important;min-width:56px!important}
   .sidebar-expanded-only{display:none!important}
-  .doc-editor-layout{flex-direction:column!important}
-  .doc-form-panel{width:100%!important;min-width:0!important;max-height:48vh;border-right:none!important;border-bottom:1px solid ${C.border}}
-  .doc-preview-panel{padding:16px!important}
   .doc-paper{padding:28px 22px!important}
 }
 @media(max-width:640px){
   .app-sidebar{width:0px!important;min-width:0px!important;border:none!important}
   .mobile-header{display:flex!important}
-  .doc-form-panel{max-height:52vh}
   .doc-paper{padding:22px 16px!important;font-size:10pt!important}
   .doc-actions{flex-wrap:wrap}
 }
@@ -1018,8 +1040,104 @@ function DocPaper({ html }) {
 }
 
 /* ════════════════════════════════════════════
-   DOC EDITOR (form + preview)
+   useViewport — detecta mobile (< 1024px) reativamente
    ════════════════════════════════════════════ */
+function useIsMobile(breakpoint = 1024) {
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia(`(max-width:${breakpoint}px)`).matches
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width:${breakpoint}px)`);
+    const update = () => setIsMobile(mq.matches);
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, [breakpoint]);
+  return isMobile;
+}
+
+/* ════════════════════════════════════════════
+   useResizablePanel — largura/altura persistida em localStorage,
+   ajustável via drag (Pointer Events: mouse + touch + pen)
+   ════════════════════════════════════════════ */
+function usePersistedSize(key, defaultValue) {
+  const [val, setVal] = useState(() => {
+    if (typeof window === "undefined") return defaultValue;
+    const stored = window.localStorage.getItem(key);
+    const n = stored ? parseFloat(stored) : NaN;
+    return Number.isFinite(n) ? n : defaultValue;
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(key, String(val)); } catch { /* ignore */ }
+  }, [key, val]);
+  return [val, setVal];
+}
+
+/* ════════════════════════════════════════════
+   RESIZER — barra arrastável entre dois painéis
+   ════════════════════════════════════════════ */
+function Resizer({ orientation, onResize }) {
+  const [dragging, setDragging] = useState(false);
+  const ref = useRef(null);
+
+  const handlePointerDown = useCallback((e) => {
+    e.preventDefault();
+    setDragging(true);
+    const startX = e.clientX, startY = e.clientY;
+    const isVertical = orientation === "horizontal"; // resizer horizontal = drag vertical
+
+    const move = (ev) => {
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+      onResize(isVertical ? dy : dx);
+    };
+    const up = () => {
+      setDragging(false);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    };
+
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = isVertical ? "row-resize" : "col-resize";
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+  }, [orientation, onResize]);
+
+  return (
+    <div
+      ref={ref}
+      role="separator"
+      aria-orientation={orientation === "horizontal" ? "horizontal" : "vertical"}
+      aria-label="Redimensionar painel do formulário"
+      tabIndex={0}
+      className={`doc-resizer ${orientation === "horizontal" ? "is-mobile" : "is-desktop"}${dragging ? " dragging" : ""}`}
+      onPointerDown={handlePointerDown}
+      onKeyDown={(e) => {
+        // teclado: setas movem 16px por vez
+        const step = 16;
+        if (orientation === "vertical") {
+          if (e.key === "ArrowLeft") onResize(-step);
+          if (e.key === "ArrowRight") onResize(step);
+        } else {
+          if (e.key === "ArrowUp") onResize(-step);
+          if (e.key === "ArrowDown") onResize(step);
+        }
+      }}
+    />
+  );
+}
+
+/* ════════════════════════════════════════════
+   DOC EDITOR (form + preview, com resizer)
+   ════════════════════════════════════════════ */
+const FORM_W_MIN = 280, FORM_W_MAX_PAD = 320;     // desktop: viewport - 320 max
+const FORM_H_MIN = 140, FORM_H_MAX_PAD = 120;     // mobile : viewport - 120 max
+const FORM_W_DEFAULT = 400;
+const FORM_H_DEFAULT = 360;
+
 function DocEditor({
   data, setData, fieldGroups, buildHTML,
   filenameBase, exportTitle,
@@ -1027,19 +1145,71 @@ function DocEditor({
 }) {
   const update = (id, val) => setData(prev => ({...prev, [id]: val}));
   const html = buildHTML(data);
+  const isMobile = useIsMobile();
+
+  const [formW, setFormW] = usePersistedSize("alldocs.formW", FORM_W_DEFAULT);
+  const [formH, setFormH] = usePersistedSize("alldocs.formH", FORM_H_DEFAULT);
+
+  // O Resizer entrega o delta acumulado desde o início do drag.
+  // Capturamos a "origem" no primeiro delta (chamado a cada move),
+  // e zeramos em pointerup via efeito global.
+  const dragOriginRef = useRef(null);
+  const onResize = useCallback((delta) => {
+    if (dragOriginRef.current === null) {
+      dragOriginRef.current = isMobile ? formH : formW;
+    }
+    const origin = dragOriginRef.current;
+    if (isMobile) {
+      const max = window.innerHeight - FORM_H_MAX_PAD;
+      setFormH(Math.max(FORM_H_MIN, Math.min(max, origin + delta)));
+    } else {
+      const max = window.innerWidth - FORM_W_MAX_PAD;
+      setFormW(Math.max(FORM_W_MIN, Math.min(max, origin + delta)));
+    }
+  }, [isMobile, formW, formH, setFormW, setFormH]);
+
+  useEffect(() => {
+    const reset = () => { dragOriginRef.current = null; };
+    window.addEventListener("pointerup", reset);
+    window.addEventListener("pointercancel", reset);
+    return () => {
+      window.removeEventListener("pointerup", reset);
+      window.removeEventListener("pointercancel", reset);
+    };
+  }, []);
+
+  // Re-clamp se a viewport diminuir e o tamanho salvo ficar maior do que cabe.
+  useEffect(() => {
+    const onWinResize = () => {
+      if (isMobile) {
+        const max = window.innerHeight - FORM_H_MAX_PAD;
+        setFormH(prev => Math.min(prev, max));
+      } else {
+        const max = window.innerWidth - FORM_W_MAX_PAD;
+        setFormW(prev => Math.min(prev, max));
+      }
+    };
+    window.addEventListener("resize", onWinResize);
+    return () => window.removeEventListener("resize", onWinResize);
+  }, [isMobile, setFormW, setFormH]);
 
   // nome de arquivo seguro
   const fileSafe = (data.pac_nome || data.resp_nome || data.usuario_nome || "Allos")
     .trim().replace(/\s+/g, "_") || "Allos";
 
+  const formStyle = isMobile
+    ? { width: "100%", minWidth: 0, height: formH, flex: `0 0 ${formH}px`,
+        background: C.creamAlt, borderBottom: `1px solid ${C.border}`,
+        overflowY: "auto", padding: "20px 18px" }
+    : { width: formW, minWidth: formW, flex: `0 0 ${formW}px`,
+        background: C.creamAlt, borderRight: `1px solid ${C.border}`,
+        overflowY: "auto", padding: "26px 22px" };
+
   return (
-    <div className="fade-in doc-editor-layout" style={{display:"flex",height:"100%",overflow:"hidden"}}>
-      {/* LEFT: form */}
-      <div className="doc-form-panel" style={{
-        width: 400, minWidth: 400, background: C.creamAlt,
-        borderRight: `1px solid ${C.border}`,
-        overflowY: "auto", padding: "26px 22px",
-      }}>
+    <div className="fade-in doc-editor-layout"
+      style={{display:"flex",height:"100%",overflow:"hidden",flexDirection:isMobile?"column":"row"}}>
+      {/* LEFT/TOP: form */}
+      <div className="doc-form-panel" style={formStyle}>
         <div style={{marginBottom:18}}>
           <h2 className="font-fraunces" style={{
             fontSize: 24, fontWeight: 600, color: C.charcoal,
@@ -1075,9 +1245,16 @@ function DocEditor({
         ))}
       </div>
 
-      {/* RIGHT: preview + actions */}
+      {/* RESIZER */}
+      <Resizer
+        orientation={isMobile ? "horizontal" : "vertical"}
+        onResize={onResize}
+      />
+
+      {/* RIGHT/BOTTOM: preview + actions */}
       <div className="doc-preview-panel" style={{
-        flex: 1, overflowY: "auto", background: C.cream, padding: 30,
+        flex: 1, minHeight: 0, overflowY: "auto", background: C.cream,
+        padding: isMobile ? 18 : 30,
       }}>
         <div className="doc-actions" style={{
           display: "flex", gap: 12, marginBottom: 22, justifyContent: "flex-end",

@@ -359,7 +359,17 @@ const sigBlock = (lines) => `<div style="text-align:center;margin-bottom:36pt;">
   ${lines.map(l => `<p${l.bold ? ' style="font-weight:600;"' : ''}>${l.text}</p>`).join("")}
 </div>`;
 
+const LOGO_LIGHT_URL = `${typeof window !== "undefined" ? window.location.origin : ""}${import.meta.env.BASE_URL}logo-light.png`;
+const LOGO_DARK_URL = `${import.meta.env.BASE_URL}logo-dark.png`;
+
 const docHeader = (title, subtitle) => `
+<div style="display:flex;align-items:center;justify-content:space-between;border-bottom:0.75pt solid #1F4F49;padding-bottom:6pt;margin-bottom:16pt;">
+  <img src="${LOGO_LIGHT_URL}" alt="Associação Allos" style="height:34pt;width:auto;object-fit:contain;" />
+  <div style="text-align:right;font-family:Georgia,'Times New Roman',serif;font-size:8pt;color:#475569;line-height:1.4;">
+    CNPJ 50.990.346/0001-52<br/>
+    Associação Allos
+  </div>
+</div>
 <h1 style="font-family:Georgia,'Times New Roman',serif;font-size:15pt;text-align:center;margin-bottom:4pt;letter-spacing:.4pt;">${title}</h1>
 ${subtitle ? `<p style="text-align:center;font-size:11pt;color:#475569;margin-bottom:18pt;font-style:italic;">${subtitle}</p>` : '<div style="margin-bottom:14pt;"></div>'}
 `;

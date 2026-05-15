@@ -61,7 +61,6 @@ const ALLOS_INST = {
 const DEFAULT_CONTRATO_ADULTO = {
   pac_nome: "", pac_nacionalidade: "", pac_profissao: "",
   pac_cpf: "", pac_endereco: "",
-  allos_rep_nome: "", allos_rep_cpf: "",
   sup_nome: "", sup_crp: "", sup_cpf: "",
   ter_nome: "", ter_cpf: "", ter_registro: "",
   srv_modalidade: "psicoterapia", srv_duracao: "50 minutos", srv_horario: "",
@@ -76,10 +75,6 @@ const FIELDS_CONTRATO_ADULTO = [
     { id: "pac_profissao", label: "Profissão", ph: "Profissão" },
     { id: "pac_cpf", label: "CPF", ph: "000.000.000-00" },
     { id: "pac_endereco", label: "Endereço completo", ph: "Rua, número, bairro — cidade/UF — CEP" },
-  ]},
-  { title: "Representante legal da Allos", icon: "🏛️", fields: [
-    { id: "allos_rep_nome", label: "Nome do(a) representante", ph: "Quem assina pela Associação Allos" },
-    { id: "allos_rep_cpf", label: "CPF do(a) representante", ph: "000.000.000-00" },
   ]},
   { title: "Supervisor(a) responsável", icon: "🧠", fields: [
     { id: "sup_nome", label: "Nome do(a) supervisor(a)", ph: "Psicólogo(a) com CRP ativo" },
@@ -113,7 +108,6 @@ const DEFAULT_CONTRATO_MENOR = {
   resp_nome: "", resp_nacionalidade: "", resp_profissao: "",
   resp_cpf: "", resp_endereco: "", resp_parentesco: "",
   pac_nome: "", pac_nascimento: "", pac_cpf: "",
-  allos_rep_nome: "", allos_rep_cpf: "",
   sup_nome: "", sup_crp: "", sup_cpf: "",
   ter_nome: "", ter_cpf: "", ter_registro: "",
   srv_modalidade: "psicoterapia", srv_duracao: "50 minutos", srv_horario: "",
@@ -134,10 +128,6 @@ const FIELDS_CONTRATO_MENOR = [
     { id: "pac_nome", label: "Nome completo", ph: "Nome completo do(a) menor" },
     { id: "pac_nascimento", label: "Data de nascimento", ph: "Ex.: 15 de janeiro de 2015" },
     { id: "pac_cpf", label: "CPF", ph: "000.000.000-00" },
-  ]},
-  { title: "Representante legal da Allos", icon: "🏛️", fields: [
-    { id: "allos_rep_nome", label: "Nome do(a) representante", ph: "Quem assina pela Associação Allos" },
-    { id: "allos_rep_cpf", label: "CPF do(a) representante", ph: "000.000.000-00" },
   ]},
   { title: "Supervisor(a) responsável", icon: "🧠", fields: [
     { id: "sup_nome", label: "Nome do(a) supervisor(a)", ph: "Psicólogo(a) com CRP ativo" },
@@ -391,7 +381,7 @@ ${sec("DAS PARTES")}
 
 ${p(`<b>CONTRATANTE:</b> ${v("pac_nome")}, ${v("pac_nacionalidade")}, ${v("pac_profissao")}, inscrito(a) no CPF sob o nº ${v("pac_cpf")}, residente e domiciliado(a) no endereço ${v("pac_endereco")}, doravante denominado(a) <b>CONTRATANTE</b>.`)}
 
-${p(`<b>CONTRATADA:</b> <b>${ALLOS_INST.nome}</b>, ${ALLOS_INST.natureza}, inscrita no CNPJ sob o nº ${ALLOS_INST.cnpj}, com sede na ${ALLOS_INST.endereco}, neste ato representada por seu(sua) representante legal ${v("allos_rep_nome")}, inscrito(a) no CPF sob o nº ${v("allos_rep_cpf")}, doravante denominada <b>CONTRATADA</b>.`)}
+${p(`<b>CONTRATADA:</b> <b>${ALLOS_INST.nome}</b>, ${ALLOS_INST.natureza}, inscrita no CNPJ sob o nº ${ALLOS_INST.cnpj}, com sede na ${ALLOS_INST.endereco}, doravante denominada <b>CONTRATADA</b>.`)}
 
 ${p(`<b>PSICÓLOGO(A) RESPONSÁVEL PELA SUPERVISÃO:</b> ${v("sup_nome")}, inscrito(a) no Conselho Regional de Psicologia sob o nº ${v("sup_crp")}, inscrito(a) no CPF sob o nº ${v("sup_cpf")}, responsável técnico(a) pela supervisão clínica do atendimento objeto deste contrato.`)}
 
@@ -495,9 +485,8 @@ ${center(`${ALLOS_INST.cidade}, ${v("vig_data")}.`)}
     { text: "CONTRATANTE", bold: true },
   ])}
   ${sigBlock([
-    { text: `<b>${v("allos_rep_nome")}</b>` },
-    { text: `CPF: ${v("allos_rep_cpf")}` },
-    { text: `${ALLOS_INST.nome} — CNPJ: ${ALLOS_INST.cnpj}`, bold: true },
+    { text: `<b>${ALLOS_INST.nome}</b>` },
+    { text: `CNPJ: ${ALLOS_INST.cnpj}` },
     { text: "CONTRATADA", bold: true },
   ])}
   ${sigBlock([
@@ -533,7 +522,7 @@ ${p(`<b>CONTRATANTE (RESPONSÁVEL LEGAL):</b> ${v("resp_nome")}, ${v("resp_nacio
 
 ${p(`<b>BENEFICIÁRIO(A) (PACIENTE):</b> ${v("pac_nome")}, nascido(a) em ${v("pac_nascimento")}, inscrito(a) no CPF sob o nº ${v("pac_cpf")}, menor de idade, representado(a) neste ato por seu(sua) responsável legal acima qualificado(a).`)}
 
-${p(`<b>CONTRATADA:</b> <b>${ALLOS_INST.nome}</b>, ${ALLOS_INST.natureza}, inscrita no CNPJ sob o nº ${ALLOS_INST.cnpj}, com sede na ${ALLOS_INST.endereco}, neste ato representada por seu(sua) representante legal ${v("allos_rep_nome")}, inscrito(a) no CPF sob o nº ${v("allos_rep_cpf")}, doravante denominada <b>CONTRATADA</b>.`)}
+${p(`<b>CONTRATADA:</b> <b>${ALLOS_INST.nome}</b>, ${ALLOS_INST.natureza}, inscrita no CNPJ sob o nº ${ALLOS_INST.cnpj}, com sede na ${ALLOS_INST.endereco}, doravante denominada <b>CONTRATADA</b>.`)}
 
 ${p(`<b>PSICÓLOGO(A) RESPONSÁVEL PELA SUPERVISÃO:</b> ${v("sup_nome")}, inscrito(a) no Conselho Regional de Psicologia sob o nº ${v("sup_crp")}, inscrito(a) no CPF sob o nº ${v("sup_cpf")}, responsável técnico(a) pela supervisão clínica do atendimento objeto deste contrato.`)}
 
@@ -645,9 +634,8 @@ ${center(`${ALLOS_INST.cidade}, ${v("vig_data")}.`)}
     { text: "CONTRATANTE (RESPONSÁVEL LEGAL)", bold: true },
   ])}
   ${sigBlock([
-    { text: `<b>${v("allos_rep_nome")}</b>` },
-    { text: `CPF: ${v("allos_rep_cpf")}` },
-    { text: `${ALLOS_INST.nome} — CNPJ: ${ALLOS_INST.cnpj}`, bold: true },
+    { text: `<b>${ALLOS_INST.nome}</b>` },
+    { text: `CNPJ: ${ALLOS_INST.cnpj}` },
     { text: "CONTRATADA", bold: true },
   ])}
   ${sigBlock([

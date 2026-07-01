@@ -272,7 +272,7 @@ const FIELDS_ENCAMINHAMENTO = [
     { id: "usuario_telefone", label: "Telefone do(a) usuário(a)", ph: "(00) 00000-0000" },
   ]},
   { title: "Atendimento conduzido por", icon: "🤝", fields: [
-    { id: "ter_nome", label: "Terapeuta (opcional)", ph: "Nome do(a) terapeuta vinculado(a) à Allos" },
+    { id: "ter_nome", label: "Terapeuta (supervisionado)", ph: "Nome do(a) terapeuta vinculado(a) à Allos" },
   ]},
   { title: "Psicólogo(a) responsável", icon: "🧠", fields: [
     { id: "sup_nome", label: "Nome do(a) psicólogo(a) responsável", ph: "Psicólogo(a) supervisor(a) com CRP ativo" },
@@ -762,6 +762,10 @@ ${p("Este documento possui caráter sigiloso e extrajudicial. Emitido como instr
 ${center(`${v("cidade")}, ${v("data")}.`)}
 
 <div style="margin-top:60pt;">
+  ${sigBlock([
+    { text: `<b>${v("ter_nome")}</b>` },
+    { text: "Terapeuta responsável pelo acompanhamento", bold: true },
+  ])}
   ${sigBlock([
     { text: `<b>${v("sup_nome")}</b>` },
     { text: `CRP ${v("sup_crp")}` },

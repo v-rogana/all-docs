@@ -344,6 +344,15 @@ function mesesPorExtenso(m) {
 const sec = (title) => `<h2 style="font-family:Georgia,'Times New Roman',serif;font-size:13pt;color:${C.sage};border-bottom:1pt solid ${C.teal};padding-bottom:4pt;margin-top:18pt;margin-bottom:6pt;font-weight:700;letter-spacing:.3pt;">${title}</h2>`;
 const p = (text) => `<p style="text-align:justify;margin:6pt 0;line-height:1.7;">${text}</p>`;
 const center = (text) => `<p style="text-align:center;margin:8pt 0;line-height:1.7;">${text}</p>`;
+// Texto de textarea (multilinha): cada quebra de linha vira um parágrafo próprio.
+// opts.lead = rótulo em negrito antes do 1º parágrafo; opts.fmt = formata cada bloco.
+const paras = (text, { lead = "", fmt = (s) => s } = {}) => {
+  const blocks = String(text).split(/\n+/).map((s) => s.trim()).filter(Boolean);
+  if (!blocks.length) return lead ? p(lead) : "";
+  return blocks
+    .map((b, i) => p((i === 0 && lead ? lead + " " : "") + fmt(b)))
+    .join("");
+};
 const sigBlock = (lines) => `<div style="text-align:center;margin-bottom:36pt;">
   <p>___________________________________________</p>
   ${lines.map(l => `<p${l.bold ? ' style="font-weight:600;"' : ''}>${l.text}</p>`).join("")}
@@ -664,9 +673,9 @@ ${docHeader("ATESTADO PSICOLÓGICO")}
 
 ${p(`Atesta-se, para fins de <b>${v("finalidade")}</b>, que <b>${v("pac_nome")}</b>, ${v("pac_idade")}, inscrito(a) no CPF sob o nº ${v("pac_cpf")}, foi submetido(a) a processo de avaliação psicológica realizado no âmbito da <b>${ALLOS_INST.nome}</b>, ${ALLOS_INST.natureza} (CNPJ ${ALLOS_INST.cnpj}), cujos resultados indicam:`)}
 
-${p(`<i>${v("conclusao")}</i>`)}
+${paras(v("conclusao"), { fmt: (s) => `<i>${s}</i>` })}
 
-${has("recomendacao") ? p(`<b>Recomendação:</b> ${v("recomendacao")}`) : ""}
+${has("recomendacao") ? paras(v("recomendacao"), { lead: "<b>Recomendação:</b>" }) : ""}
 
 ${has("ter_nome") ? p(`O atendimento foi conduzido pelo(a) terapeuta <b>${v("ter_nome")}</b>, vinculado(a) à ${ALLOS_INST.nome} e integrante de seu programa de supervisão clínica continuada, sob supervisão técnica do(a) psicólogo(a) abaixo identificado(a), responsável técnico(a) pelo presente atestado.`) : ""}
 
@@ -739,7 +748,7 @@ ${p("O(a) psicólogo(a) abaixo identificado(a) encaminha o(a) usuário(a) qualif
 
 ${sec("ORIGEM E MOTIVO")}
 ${p(`<b>Instituição de origem:</b> ${v("inst_origem")}`)}
-${p(`<b>Motivo do encaminhamento:</b> ${v("motivo")}`)}
+${paras(v("motivo"), { lead: "<b>Motivo do encaminhamento:</b>" })}
 
 ${sec("SERVIÇO DE DESTINO")}
 ${p(`<b>Serviço:</b> ${v("destino_servico")}`)}
@@ -960,13 +969,19 @@ function Field({ field, value, onChange }) {
         letterSpacing: ".4px", textTransform: "uppercase",
       }}>{field.label}</label>
       {isTextarea ? (
-        <textarea
-          className="allos-input"
-          value={value || ""}
-          onChange={e => onChange(e.target.value)}
-          placeholder={field.ph}
-          rows={field.rows || 3}
-        />
+        <>
+          <textarea
+            className="allos-input"
+            value={value || ""}
+            onChange={e => onChange(e.target.value)}
+            placeholder={field.ph}
+            rows={field.rows || 3}
+          />
+          <span className="font-dm" style={{
+            display: "block", fontSize: 10.5, color: C.muted,
+            marginTop: 4, fontStyle: "italic",
+          }}>↵ Pressione Enter para começar um novo parágrafo.</span>
+        </>
       ) : (
         <input
           className="allos-input"

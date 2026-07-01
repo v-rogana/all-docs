@@ -353,13 +353,10 @@ const LOGO_LIGHT_URL = `${typeof window !== "undefined" ? window.location.origin
 const LOGO_DARK_URL = `${import.meta.env.BASE_URL}logo-dark.png`;
 
 const docHeader = (title, subtitle) => `
-<div style="display:flex;align-items:center;justify-content:space-between;border-bottom:0.75pt solid #1F4F49;padding-bottom:6pt;margin-bottom:16pt;">
-  <img src="${LOGO_LIGHT_URL}" alt="Associação Allos" style="height:34pt;width:auto;object-fit:contain;" />
-  <div style="text-align:right;font-family:Georgia,'Times New Roman',serif;font-size:8pt;color:#475569;line-height:1.4;">
-    CNPJ 50.990.346/0001-52<br/>
-    Associação Allos
-  </div>
-</div>
+<table style="width:100%;border-collapse:collapse;margin-bottom:16pt;"><tr>
+  <td style="border-bottom:0.75pt solid #1F4F49;padding-bottom:6pt;vertical-align:bottom;"><img src="${LOGO_LIGHT_URL}" alt="Associação Allos" style="width:84px;height:36px;" /></td>
+  <td style="border-bottom:0.75pt solid #1F4F49;padding-bottom:6pt;vertical-align:bottom;text-align:right;font-family:Georgia,'Times New Roman',serif;font-size:8pt;color:#475569;line-height:1.4;"><p style="margin:0;">CNPJ 50.990.346/0001-52</p><p style="margin:0;">Associação Allos</p></td>
+</tr></table>
 <h1 style="font-family:Georgia,'Times New Roman',serif;font-size:15pt;text-align:center;margin-bottom:4pt;letter-spacing:.4pt;">${title}</h1>
 ${subtitle ? `<p style="text-align:center;font-size:11pt;color:#475569;margin-bottom:18pt;font-style:italic;">${subtitle}</p>` : '<div style="margin-bottom:14pt;"></div>'}
 `;
@@ -788,9 +785,41 @@ p{margin:6pt 0;text-align:justify;line-height:1.7}
 </style></head><body>${content}</body></html>`;
 }
 
-function exportDOCX(content, filename) {
-  const html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View></w:WordDocument></xml><![endif]--><style>@page{size:A4;margin:2cm}body{font-family:Georgia,'Times New Roman',Times,serif;font-size:11pt;line-height:1.6;color:#000}h1{margin-bottom:8pt}h2{margin-top:14pt;color:${C.sage}}p{margin:6pt 0}</style></head><body>${content}</body></html>`;
-  const blob = new Blob(["﻿"+html], {type:"application/msword"});
+async function toDataURL(url) {
+  try {
+    const resp = await fetch(url);
+    const blob = await resp.blob();
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return url; // fallback: mantém a URL original se o fetch falhar
+  }
+}
+
+async function exportDOCX(content, filename) {
+  // Gera um .docx real (OOXML): a logo entra como mídia embutida no arquivo,
+  // abrindo corretamente tanto no Word quanto no Google Docs.
+  // A logo precisa virar data URI para o html-to-docx conseguir embuti-la.
+  const logoData = await toDataURL(LOGO_LIGHT_URL);
+  const embedded = content.split(LOGO_LIGHT_URL).join(logoData);
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:Georgia,'Times New Roman',Times,serif;font-size:11pt;line-height:1.6;color:#000}h1{margin-bottom:8pt}h2{margin-top:14pt;color:${C.sage}}p{margin:6pt 0}</style></head><body>${embedded}</body></html>`;
+
+  // Carrega a biblioteca sob demanda (pesada) só ao exportar
+  const { default: HTMLtoDOCX } = await import("html-to-docx");
+  const buffer = await HTMLtoDOCX(html, null, {
+    table: { row: { cantSplit: true } },
+    footer: false,
+    pageNumber: false,
+    margins: { top: 1134, right: 1134, bottom: 1134, left: 1134 }, // ~2cm
+  });
+
+  const blob = buffer instanceof Blob
+    ? buffer
+    : new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = filename;
@@ -1264,7 +1293,7 @@ function DocEditor({
           <ActionBtn label="📄  Gerar PDF" color={C.teal}
             onClick={() => exportPDF(html, exportTitle)} />
           <ActionBtn label="📝  Gerar DOCX" color={C.accent}
-            onClick={() => exportDOCX(html, `${filenameBase}_${fileSafe}.doc`)} />
+            onClick={() => exportDOCX(html, `${filenameBase}_${fileSafe}.docx`)} />
         </div>
 
         <DocPaper html={html} />

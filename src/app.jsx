@@ -291,6 +291,49 @@ const META_ENCAMINHAMENTO = {
 };
 
 /* ════════════════════════════════════════════
+   DOCUMENT 6 — DECLARAÇÃO DE COMPARECIMENTO
+   (comprova participação nas sessões, sem revelar
+   conteúdo clínico — Res. CFP 06/2019)
+   ════════════════════════════════════════════ */
+const DEFAULT_DECLARACAO = {
+  pac_nome: "", pac_cpf: "",
+  datas: "",
+  finalidade: "",
+  ter_nome: "",
+  sup_nome: "", sup_crp: "",
+  cidade: ALLOS_INST.cidade, data: "",
+};
+
+const FIELDS_DECLARACAO = [
+  { title: "Pessoa atendida", icon: "👤", fields: [
+    { id: "pac_nome", label: "Nome completo", ph: "Nome da pessoa atendida" },
+    { id: "pac_cpf", label: "CPF", ph: "000.000.000-00" },
+  ]},
+  { title: "Comparecimento", icon: "🗓️", fields: [
+    { id: "datas", label: "Datas e horários", type: "textarea", ph: "Uma por linha — ex.: 14 de julho de 2026, das 14h às 15h", rows: 5 },
+    { id: "finalidade", label: "Finalidade (opcional)", ph: "Ex.: apresentação ao empregador / prefeitura" },
+  ]},
+  { title: "Atendimento conduzido por", icon: "🤝", fields: [
+    { id: "ter_nome", label: "Terapeuta (opcional)", ph: "Nome do(a) terapeuta que conduziu o atendimento" },
+  ]},
+  { title: "Psicólogo(a) responsável", icon: "🧠", fields: [
+    { id: "sup_nome", label: "Nome do(a) psicólogo(a) responsável", ph: "Psicólogo(a) supervisor(a) com CRP ativo" },
+    { id: "sup_crp", label: "CRP", ph: "XX/XXXXX" },
+  ]},
+  { title: "Local e data", icon: "📅", fields: [
+    { id: "cidade", label: "Cidade/UF", ph: "Ex.: Belo Horizonte/MG" },
+    { id: "data", label: "Data de emissão", ph: "Ex.: 14 de julho de 2026" },
+  ]},
+];
+
+const META_DECLARACAO = {
+  quando: "Comprovar comparecimento a atendimento — justificar ausência no trabalho, escola ou órgão público.",
+  quem: "Pessoa atendida, responsável legal, empregador, órgãos públicos.",
+  vedacoes: "Não pode conter diagnóstico, conteúdo das sessões ou qualquer informação sigilosa — apenas o comparecimento.",
+  baseLegal: "Res. CFP nº 06/2019 (Declaração).",
+};
+
+/* ════════════════════════════════════════════
    NÚMERO POR EXTENSO
    ════════════════════════════════════════════ */
 function valorPorExtenso(val) {
@@ -772,6 +815,40 @@ ${center(`${v("cidade")}, ${v("data")}.`)}
     { text: `<b>${v("ter_nome")}</b>` },
     { text: "Terapeuta responsável pelo acompanhamento", bold: true },
   ])}
+  ${sigBlock([
+    { text: `<b>${v("sup_nome")}</b>` },
+    { text: `CRP ${v("sup_crp")}` },
+    { text: "Psicólogo(a) responsável", bold: true },
+  ])}
+</div>`;
+}
+
+/* ════════════════════════════════════════════
+   DECLARAÇÃO DE COMPARECIMENTO — render
+   Assinada pelo(a) psicólogo(a) responsável.
+   Comprova o comparecimento sem revelar conteúdo
+   clínico (sigilo · Res. CFP 06/2019).
+   ════════════════════════════════════════════ */
+function renderDeclaracao(d) {
+  const v = (id) => d[id] || `[${id}]`;
+  const has = (id) => Boolean(d[id] && d[id].toString().trim());
+
+  return `
+${docHeader("DECLARAÇÃO DE COMPARECIMENTO")}
+
+${p(`Declara-se, para os devidos fins, que <b>${v("pac_nome")}</b>, inscrito(a) no CPF sob o nº ${v("pac_cpf")}, compareceu a atendimento psicológico realizado no âmbito da <b>${ALLOS_INST.nome}</b>, ${ALLOS_INST.natureza} (CNPJ ${ALLOS_INST.cnpj}), na(s) seguinte(s) data(s) e horário(s):`)}
+
+${paras(v("datas"))}
+
+${has("finalidade") ? p(`A presente declaração é emitida para fins de <b>${v("finalidade")}</b>.`) : ""}
+
+${has("ter_nome") ? p(`O atendimento foi conduzido pelo(a) terapeuta <b>${v("ter_nome")}</b>, vinculado(a) à ${ALLOS_INST.nome} e integrante de seu programa de supervisão clínica continuada, sob supervisão técnica do(a) psicólogo(a) abaixo identificado(a).`) : ""}
+
+${p("Esta declaração restringe-se a comprovar o comparecimento, não contendo qualquer informação de natureza clínica, diagnóstica ou sigilosa, em observância ao sigilo profissional e à Resolução CFP nº 06/2019.")}
+
+${center(`${v("cidade")}, ${v("data")}.`)}
+
+<div style="margin-top:60pt;">
   ${sigBlock([
     { text: `<b>${v("sup_nome")}</b>` },
     { text: `CRP ${v("sup_crp")}` },
@@ -1398,6 +1475,8 @@ function MobileSidebarOverlay({ open, onClose, view, setView }) {
           onClick={() => { setView("termo"); onClose(); }} />
         <SidebarItem icon="📨" label="Formulário de encaminhamento" active={view === "encaminhamento"} open
           onClick={() => { setView("encaminhamento"); onClose(); }} />
+        <SidebarItem icon="🗓️" label="Declaração de comparecimento" active={view === "declaracao"} open accent={C.accent}
+          onClick={() => { setView("declaracao"); onClose(); }} />
       </div>
     </div>
   );
@@ -1417,6 +1496,7 @@ export default function App() {
   const [dataAtestado, setDataAtestado] = useState({...DEFAULT_ATESTADO});
   const [dataTermo, setDataTermo] = useState({...DEFAULT_TERMO});
   const [dataEncaminhamento, setDataEncaminhamento] = useState({...DEFAULT_ENCAMINHAMENTO});
+  const [dataDeclaracao, setDataDeclaracao] = useState({...DEFAULT_DECLARACAO});
 
   return (
     <div className="allos-grain" style={{
@@ -1490,6 +1570,9 @@ export default function App() {
             <SidebarItem icon="📨" label="Formulário de encaminhamento"
               active={view === "encaminhamento"} open={sidebarOpen}
               onClick={() => setView("encaminhamento")} />
+            <SidebarItem icon="🗓️" label="Declaração de comparecimento"
+              active={view === "declaracao"} open={sidebarOpen} accent={C.accent}
+              onClick={() => setView("declaracao")} />
           </div>
 
           {/* Footer */}
@@ -1563,6 +1646,18 @@ export default function App() {
               title="Formulário de encaminhamento"
               subtitle="Encaminhamento a serviço externo · instrumento auxiliar de cuidado"
               meta={META_ENCAMINHAMENTO} />
+          )}
+
+          {view === "declaracao" && (
+            <DocEditor
+              data={dataDeclaracao} setData={setDataDeclaracao}
+              fieldGroups={FIELDS_DECLARACAO}
+              buildHTML={renderDeclaracao}
+              filenameBase="Declaracao_Comparecimento_Allos"
+              exportTitle="Declaração de Comparecimento — Allos"
+              title="Declaração de comparecimento"
+              subtitle="Comprova participação nas sessões · sem conteúdo clínico · Res. CFP 06/2019"
+              meta={META_DECLARACAO} />
           )}
         </div>
       </div>
